@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # MCP Server Container
+  mcp-server:
+    build: .
+    container_name: mcp-integration-hub
+    restart: unless-stopped
+    
+    # Security: Read-only root filesystem
+    read_only: true
+    
+    # Security: Temporary directories for runtime
+    tmpfs:
+      - /tmp
+      - /var/run
+    
+    # Security: Drop all capabilities except what's needed
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    
+    # Security: Run as non-root user
+    user: "1001:1001"
+    
+    # Environment variables (loaded from .env file)
+    env_file:
+      - .env.docker
+    
+    # Security: Isolate network
+    networks:
+      - mcp-secure
+    
+    # Health monitoring
+    healthcheck:
+      test: ["CMD", "echo", '{"jsonrpc":"2.0","method":"tools/list","id":1}', "|", "node", "server.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # API Key Proxy (handles secure credential management)
+  api-proxy:
+    build: ./docker/api-proxy
+    container_name: mcp-api-proxy
+    restart: unless-stopped
+    
+    # Mount Docker socket read-only for Keychain access
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./secure-keys:/secure:ro
+    
+    # Security settings
+    read_only: true
+    cap_drop:
+      - ALL
+    
+    # Internal network only
+    networks:
+      - mcp-secure
+    
+    # Expose port for MCP server to connect
+    expose:
+      - "3000"
+    
+    environment:
+      - NODE_ENV=production
+      - USE_KEYCHAIN=true
+
+# Secure internal network
+networks:
+  mcp-secure:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# No volumes needed - all config is ephemeral or injected
