@@ -1,0 +1,29 @@
+{
+  "name": "mcp-integration-hub",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP Integration Hub - Connect Claude Desktop with GitHub, Weather, and more",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo '{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"id\":1}' | node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.4.5"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "github",
+    "integration",
+    "ai"
+  ],
+  "author": "speedwarnsf",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/speedwarnsf/mcp-integration-hub.git"
+  }
+}
